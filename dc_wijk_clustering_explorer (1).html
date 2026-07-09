@@ -1,0 +1,243 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.wrap{padding:1rem 0}
+.top-bar{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;flex-wrap:wrap}
+.top-bar h2{font-size:17px;font-weight:500;color:var(--color-text-primary);flex:1}
+select{font-size:13px;padding:6px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);min-width:220px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem}
+.stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:0.75rem 1rem}
+.stat-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:4px}
+.stat-val{font-size:22px;font-weight:500;color:var(--color-text-primary)}
+.stat-val.green{color:#1D9E75}
+.stat-val.red{color:#D85A30}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem;cursor:pointer;transition:border-color 0.15s}
+.card:hover{border-color:var(--color-border-secondary)}
+.card.active{border:2px solid #378ADD}
+.card-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.dc-badge{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0}
+.card-name{font-size:14px;font-weight:500;color:var(--color-text-primary);line-height:1.3}
+.card-adres{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.card-hoofd{font-size:12px;color:var(--color-text-secondary)}
+.wijk-list{margin-top:10px;border-top:0.5px solid var(--color-border-tertiary);padding-top:10px}
+.wijk-list-title{font-size:11px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px}
+.wijk-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.wijk-row:last-child{border-bottom:none}
+.wijk-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.wijk-name{font-size:12px;color:var(--color-text-primary);flex:1}
+.wijk-km{font-size:11px;font-weight:500;padding:2px 7px;border-radius:10px;flex-shrink:0}
+.badge-ver{background:#FAECE7;color:#993C1D}
+.wijk-status{font-size:10px;color:var(--color-text-tertiary);margin-left:4px}
+.detail-panel{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-top:1rem;display:none}
+.detail-panel.show{display:block}
+.detail-title{font-size:16px;font-weight:500;color:var(--color-text-primary);margin-bottom:0.75rem}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.detail-item{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px}
+.detail-item-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:3px}
+.detail-item-val{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.warn-box{background:#FAECE7;border:0.5px solid #F0997B;border-radius:var(--border-radius-md);padding:0.75rem 1rem;margin-top:1rem;font-size:13px;color:#993C1D}
+.filter-row{display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap}
+.filter-btn{font-size:12px;padding:5px 12px;border-radius:20px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer}
+.filter-btn.active{background:#378ADD;color:#fff;border-color:#378ADD}
+.empty{text-align:center;padding:2rem;color:var(--color-text-secondary);font-size:13px}
+</style>
+
+<h2 class="sr-only">Interactieve clustering tool: wijkkantoren per DC kantoor op basis van locatie</h2>
+
+<div class="wrap">
+  <div class="top-bar">
+    <h2><i class="ti ti-building-community" aria-hidden="true" style="font-size:18px;vertical-align:-2px;margin-right:6px"></i>DC–Wijk clustering explorer</h2>
+    <select id="sortSel">
+      <option value="nr">Sorteer op DC nummer</option>
+      <option value="az">Sorteer op naam</option>
+      <option value="count">Sorteer op aantal wijken</option>
+    </select>
+  </div>
+
+  <div class="filter-row">
+    <button class="filter-btn active" data-f="all">Alle districten</button>
+    <button class="filter-btn" data-f="paramaribo">Paramaribo</button>
+    <button class="filter-btn" data-f="wanica">Wanica</button>
+    <button class="filter-btn" data-f="buiten">Buiten Paramaribo</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-label">DC kantoren</div><div class="stat-val" id="sDC">15</div></div>
+    <div class="stat"><div class="stat-label">Wijkkantoren te clusteren</div><div class="stat-val green" id="sOK">55</div></div>
+    <div class="stat"><div class="stat-label">Actie vereist (&gt;15 km)</div><div class="stat-val red" id="sWarn">3</div></div>
+  </div>
+
+  <div class="grid" id="dcGrid"></div>
+  <div class="detail-panel" id="detailPanel"></div>
+</div>
+
+<script>
+const COLORS=[
+  {bg:'#E6F1FB',text:'#0C447C'},{bg:'#E1F5EE',text:'#085041'},{bg:'#FAECE7',text:'#712B13'},
+  {bg:'#EEEDFE',text:'#3C3489'},{bg:'#FBEAF0',text:'#72243E'},{bg:'#EAF3DE',text:'#27500A'},
+  {bg:'#FAEEDA',text:'#633806'},{bg:'#FCEBEB',text:'#791F1F'},{bg:'#F1EFE8',text:'#444441'},
+  {bg:'#E6F1FB',text:'#185FA5'},{bg:'#E1F5EE',text:'#0F6E56'},{bg:'#FAECE7',text:'#993C1D'},
+  {bg:'#EEEDFE',text:'#534AB7'},{bg:'#FBEAF0',text:'#993556'},{bg:'#EAF3DE',text:'#3B6D11'}
+];
+
+const DC=[
+  {nr:1,naam:'Paramaribo Noord',hoofd:'Marlon Budike',adres:'Van Sommelsdijckstraat 24',cat:'paramaribo',lat:5.8298,lon:-55.1485},
+  {nr:2,naam:'Paramaribo Midden',hoofd:'Ilahibaks Ruchsana',adres:'Van Sommelsdijckstraat 24',cat:'paramaribo',lat:5.8298,lon:-55.149},
+  {nr:3,naam:'Paramaribo Zuid',hoofd:'Vijfhoven Wennys',adres:'Leysweg 106',cat:'paramaribo',lat:5.8114,lon:-55.215},
+  {nr:4,naam:'Wanica Zuid-Oost',hoofd:'Ernesto Muller',adres:'Flamboyantlaan 3',cat:'wanica',lat:5.7377,lon:-55.145},
+  {nr:5,naam:'Wanica Centrum',hoofd:'Ravi Bhattoe',adres:'Tawajariweg 73, Lelydorp',cat:'wanica',lat:5.7023,lon:-55.2258},
+  {nr:6,naam:'Wanica Noord-West',hoofd:'Glenda Kranenburg',adres:'Comm. Weythingweg 473',cat:'wanica',lat:5.816,lon:-55.2869},
+  {nr:7,naam:'Nickerie',hoofd:'Mohamed Bakas',adres:'R.P. Bharosstraat 86',cat:'buiten',lat:5.946,lon:-56.9932},
+  {nr:8,naam:'Commewijne',hoofd:'Rajiv Ramsahai',adres:'Wilhelminastraat, Nieuw Amsterdam',cat:'buiten',lat:5.8882,lon:-55.0916},
+  {nr:9,naam:'Para',hoofd:'Patrick Kensenhuis',adres:'Dalhbergstraat 1, Onverwacht',cat:'buiten',lat:5.5923,lon:-55.1955},
+  {nr:10,naam:'Saramacca',hoofd:'Ramautar Aniel',adres:'Sidodadiweg, Groningen',cat:'buiten',lat:5.7945,lon:-55.479},
+  {nr:11,naam:'Coronie',hoofd:'Eric Boldewijn',adres:'Oost-West verbinding, Totness',cat:'buiten',lat:5.8719,lon:-56.3321},
+  {nr:12,naam:'Marowijne Z-W',hoofd:'Clyde Hunswijk',adres:'Jullianaweg 71, Moengo',cat:'buiten',lat:5.6081,lon:-54.3987},
+  {nr:13,naam:'Marowijne N-O',hoofd:'Marvin Vijent',adres:'Olton W. van Genderen Blvd, Albina',cat:'buiten',lat:5.5051,lon:-54.0793},
+  {nr:14,naam:'Brokopondo',hoofd:'Gregory van der Kamp',adres:'Aloesoebandjaweg 1',cat:'buiten',lat:5.0252,lon:-54.9929},
+  {nr:15,naam:'Sipaliwini',hoofd:'Morishi Selindia e.a.',adres:'Zwartenhovenbrugstraat',cat:'paramaribo',lat:5.8237,lon:-55.1635},
+];
+
+const WIJKEN=[
+  {naam:'Wijk 1,2,4,5,7,8,13 (Mgr. Wulfingstraat)',adres:'Mgr. Wulfingstraat',status:'Huurpand',dc:1,km:0.6},
+  {naam:'Wijk 9+16 (Wanakoestraat)',adres:'Wanakoestraat 10',status:'Huurpand',dc:2,km:3.2},
+  {naam:'Wijk 10+11 (Kastiestraat)',adres:'Kastiestraat – Ramgoelamweg',status:'Huurpand',dc:2,km:2.8},
+  {naam:'Wijk 6 (Jaggernath Lachmonstraat)',adres:'Jaggernath Lachmonstraat',status:'Overheid',dc:2,km:4.1},
+  {naam:'Wijk 15 (Oemrawsinghstraat)',adres:'Ratan Oemrawsinghstraat',status:'Huurpand',dc:3,km:1.9},
+  {naam:'Wijk 14 (Gemenelandsweg)',adres:'Gemenelandsweg AOV',status:'Overheid',dc:3,km:1.4},
+  {naam:'Wijk 12 (Ramnarainstraat)',adres:'Ramnarainstraat / Oemrawweg',status:'Overheid',dc:3,km:2.1},
+  {naam:'Wijk 8+11 (Churchillweg)',adres:'Sir Winston Churchillweg 924',status:'Huurpand',dc:4,km:4.8},
+  {naam:'Wijk 15 (Welgedacht A 325)',adres:'Welgedacht A nr. 325',status:'Huurpand',dc:4,km:3.9},
+  {naam:'Wijk 1 & 9 (Lelydorp Centraal)',adres:'Centraal Kantoor Lelydorp',status:'Overheid',dc:5,km:0.3},
+  {naam:'Wijk 2+14 (Welgedacht A 65)',adres:'Welgedacht A weg 65',status:'Huurpand',dc:5,km:5.2},
+  {naam:'Wijk 3 (Indira Ghandiweg)',adres:'Indira Ghandiweg 490',status:'Huurpand',dc:5,km:3.7},
+  {naam:'Wijk 7+12 (Cassialaan)',adres:'Cassialaan 60',status:'Huurpand',dc:5,km:4.4},
+  {naam:'Wijk 10 (Sumatraweg)',adres:'Sumatraweg 167',status:'Huurpand',dc:5,km:6.1},
+  {naam:'DA Central (Industrieweg)',adres:'Industrieweg 93',status:'Huurpand',dc:6,km:2.3},
+  {naam:'Wijk 4+13 (Bomaweg)',adres:'Bomaweg 275',status:'Huurpand',dc:6,km:3.1},
+  {naam:'Wijk 5+6 (Commissarisweytingweg)',adres:'Commissarisweytingweg',status:'Huurpand',dc:6,km:1.8},
+  {naam:'Wijk 1 (Akadoergashawstraat)',adres:'Akadoergashawstraat 96',status:'Overheid',dc:7,km:0.5},
+  {naam:'Wijk 2 (Voorland)',adres:'Voorland 15',status:'Overheid',dc:7,km:0.8},
+  {naam:'Wijk 3 (Rambaranmissierweg)',adres:'Rambaranmissierweg 15',status:'Overheid',dc:7,km:1.1},
+  {naam:'Wijk 4 (Groot Henarpolder)',adres:'Groot Henarpolder 11',status:'Huurpand',dc:7,km:24.7,ver:true},
+  {naam:'Wijk 5 (Wageningen)',adres:'Wageningen',status:'Overheid',dc:7,km:38.2,ver:true},
+  {naam:'Wijk 6 (Rambaranmissierweg 15A)',adres:'Rambaranmissierweg 15A',status:'Overheid',dc:7,km:1.2},
+  {naam:'DA + Wijk 2 t/m 6 (Nieuw Amsterdam)',adres:'Wilhelminastraat, Nieuw Amsterdam',status:'Huurpand/Overheid',dc:8,km:0.5},
+  {naam:'Wijk 3 (Voorburg)',adres:'Roblesweg 271, Voorburg',status:'Huurpand',dc:8,km:4.3},
+  {naam:'Wijk 4 (Meerzorg)',adres:'Comm. Thurkow weg 58',status:'Huurpand',dc:8,km:8.1},
+  {naam:'Wijk 6 (Lust en Rust)',adres:'Lust en Rust weg',status:'Huurpand',dc:8,km:5.6},
+  {naam:'Dep. Technische Dienst',adres:'Weg naar peperpot 55',status:'Huurpand',dc:8,km:6.2},
+  {naam:'DA + Wijken 1–5 (Onverwacht / Para)',adres:'Dalhbergstraat, Onverwacht',status:'Overheid/Huurpand',dc:9,km:0.8},
+  {naam:'DA + Wijken 1–5 (Groningen)',adres:'Sidodadiweg / Twatwastraat',status:'Overheid',dc:10,km:0.4},
+  {naam:'DA Coronie + Wijk 1 (Totness)',adres:'Soemboredjoweg / Totness',status:'Overheid',dc:11,km:0.9},
+  {naam:'Wijk 1 (Moengo Staatsdorp)',adres:'Staatsdorp, Moengo',status:'Overheid',dc:12,km:0.7},
+  {naam:'Wijk 2 (Galibi)',adres:'Galibi',status:'Overheid',dc:13,km:34.5,ver:true},
+  {naam:'DA + Wijk 1 (Afobakka)',adres:'Mamadamweg 50, Afobakka',status:'Overheid',dc:14,km:2.1},
+  {naam:'Wijk 2 (Bronsweg)',adres:'Bronsweg',status:'Opgezegd',dc:14,km:6.4},
+  {naam:'Wijk 3 (Klaaskreek)',adres:'Klaaskreek',status:'Opgezegd',dc:14,km:9.2},
+  {naam:'Wijk 1+2 (Zwartenhovenbrugstraat)',adres:'Zwartenhovenbrugstraat',status:'—',dc:15,km:0.2},
+];
+
+let activeFilter='all', activeSort='nr', activeDC=null;
+
+function getWijken(dcNr){return WIJKEN.filter(w=>w.dc===dcNr)}
+
+function getFilteredDC(){
+  let list=[...DC];
+  if(activeFilter!=='all') list=list.filter(d=>d.cat===activeFilter);
+  if(activeSort==='az') list.sort((a,b)=>a.naam.localeCompare(b.naam));
+  else if(activeSort==='count') list.sort((a,b)=>getWijken(b.nr).length-getWijken(a.nr).length);
+  else list.sort((a,b)=>a.nr-b.nr);
+  return list;
+}
+
+function kmBadge(km,ver){
+  if(ver) return `<span class="wijk-km badge-ver"><i class="ti ti-alert-triangle" aria-hidden="true" style="font-size:10px;vertical-align:-1px"></i> ${km} km</span>`;
+  const bg=km<5?'#EAF3DE':km<10?'#FAEEDA':'#E6F1FB';
+  const col=km<5?'#27500A':km<10?'#633806':'#0C447C';
+  return `<span class="wijk-km" style="background:${bg};color:${col}">${km.toFixed(1)} km</span>`;
+}
+
+function renderCards(){
+  const dc=getFilteredDC();
+  const grid=document.getElementById('dcGrid');
+  if(!dc.length){grid.innerHTML='<div class="empty">Geen DC kantoren gevonden</div>';return;}
+
+  let ok=0,warn=0;
+  WIJKEN.forEach(w=>w.ver?warn++:ok++);
+  document.getElementById('sDC').textContent=DC.length;
+  document.getElementById('sOK').textContent=ok;
+  document.getElementById('sWarn').textContent=warn;
+
+  grid.innerHTML=dc.map(d=>{
+    const cl=COLORS[(d.nr-1)%COLORS.length];
+    const wijken=getWijken(d.nr);
+    const hasWarn=wijken.some(w=>w.ver);
+    const isActive=activeDC===d.nr;
+    return `<div class="card${isActive?' active':''}" onclick="selectDC(${d.nr})" role="button" tabindex="0" aria-label="DC ${d.naam}">
+      <div class="card-head">
+        <div class="dc-badge" style="background:${cl.bg};color:${cl.text}">DC${d.nr}</div>
+        <div>
+          <div class="card-name">${d.naam}</div>
+          <div class="card-adres">${d.adres}</div>
+        </div>
+      </div>
+      <div class="card-hoofd"><i class="ti ti-user" aria-hidden="true" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>${d.hoofd}</div>
+      <div class="wijk-list">
+        <div class="wijk-list-title">${wijken.length} wijkkantoren te clusteren</div>
+        ${wijken.slice(0,isActive?999:3).map(w=>`
+          <div class="wijk-row">
+            <div class="wijk-dot" style="background:${w.ver?'#D85A30':'#1D9E75'}"></div>
+            <div class="wijk-name">${w.naam}</div>
+            ${kmBadge(w.km,w.ver)}
+          </div>`).join('')}
+        ${!isActive&&wijken.length>3?`<div style="font-size:11px;color:var(--color-text-secondary);padding:5px 0 0">+ ${wijken.length-3} meer — klik voor volledig overzicht</div>`:''}
+      </div>
+      ${hasWarn&&isActive?`<div class="warn-box"><i class="ti ti-alert-triangle" aria-hidden="true" style="font-size:14px;vertical-align:-2px;margin-right:6px"></i>Eén of meer wijkkantoren liggen verder dan 15 km — aparte voorziening aanbevolen.</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function selectDC(nr){
+  activeDC=activeDC===nr?null:nr;
+  renderCards();
+  if(activeDC){
+    const d=DC.find(x=>x.nr===nr);
+    const wijken=getWijken(nr);
+    const panel=document.getElementById('detailPanel');
+    const ver=wijken.filter(w=>w.ver);
+    const ok=wijken.filter(w=>!w.ver);
+    panel.className='detail-panel show';
+    panel.innerHTML=`
+      <div class="detail-title"><i class="ti ti-building" aria-hidden="true" style="font-size:16px;vertical-align:-2px;margin-right:6px"></i>DC ${d.nr} — ${d.naam}</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-item-label">DC hoofd</div><div class="detail-item-val">${d.hoofd}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Adres DC kantoor</div><div class="detail-item-val">${d.adres}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Wijken te clusteren</div><div class="detail-item-val" style="color:#1D9E75">${ok.length}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Wijken ver weg (&gt;15 km)</div><div class="detail-item-val" style="color:${ver.length?'#D85A30':'var(--color-text-primary)'}">${ver.length}</div></div>
+      </div>
+      ${ver.length?`<div class="warn-box" style="margin-top:12px"><strong>Let op:</strong> ${ver.map(w=>`${w.naam} (${w.km} km)`).join(', ')} ${ver.length===1?'ligt':'liggen'} te ver om bij dit DC te clusteren. Overweeg een eigen lokale voorziening.</div>`:''}
+      <button onclick="sendPrompt('Geef advies over hoe DC ${d.naam} de wijkkantoren praktisch kan onderbrengen als business center, rekening houdend met de lokale bereikbaarheid van bewoners.')" style="margin-top:12px;font-size:13px">Advies voor DC ${d.naam} ↗</button>
+    `;
+    panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+  } else {
+    document.getElementById('detailPanel').className='detail-panel';
+  }
+}
+
+document.getElementById('sortSel').addEventListener('change',e=>{activeSort=e.target.value;renderCards()});
+document.querySelectorAll('.filter-btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    activeFilter=b.dataset.f;
+    activeDC=null;
+    document.getElementById('detailPanel').className='detail-panel';
+    renderCards();
+  });
+});
+
+renderCards();
+</script>
