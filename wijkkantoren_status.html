@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wijkkantoren — Status &amp; Clusteringprioriteit</title>
+<style>
+  :root{
+    --bg: #f6f4ee;
+    --panel: #ffffff;
+    --ink: #1b2b24;
+    --ink-soft: #55665d;
+    --line: #dcd6c8;
+    --green-deep: #1b4332;
+    --green-mid: #2d6a4f;
+    --ochre: #b9862f;
+
+    --goed: #2e7d4f;
+    --goed-bg: #e6f2e9;
+    --matig: #a67c1e;
+    --matig-bg: #faf1dc;
+    --slecht: #c0562b;
+    --slecht-bg: #fbe9de;
+    --zeerslecht: #a5292b;
+    --zeerslecht-bg: #fbe1e0;
+    --deplorabel: #6b1730;
+    --deplorabel-bg: #f2dde2;
+    --onbekend: #7a7a72;
+    --onbekend-bg: #ecebe3;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height:1.45;
+  }
+
+  .wrap{ max-width: 1180px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  header.top{
+    display:flex; flex-direction:column; gap:6px;
+    border-bottom: 2px solid var(--green-deep);
+    padding-bottom:18px; margin-bottom:22px;
+  }
+  .eyebrow{
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color: var(--ochre); font-weight:700;
+  }
+  h1{
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 30px; margin: 2px 0 4px; color: var(--green-deep);
+    letter-spacing: -0.01em;
+  }
+  .sub{ color: var(--ink-soft); font-size:14.5px; max-width:760px; }
+
+  .stats{
+    display:grid; grid-template-columns: repeat(7, 1fr); gap:10px;
+    margin: 20px 0 22px;
+  }
+  @media (max-width:1000px){ .stats{ grid-template-columns: repeat(4,1fr);} }
+  @media (max-width:560px){ .stats{ grid-template-columns: repeat(2,1fr);} }
+
+  .stat{
+    background: var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:12px 12px; text-align:left; cursor:pointer; transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .stat:hover{ transform: translateY(-2px); box-shadow: 0 4px 14px rgba(27,67,50,0.08); }
+  .stat.active{ outline: 2px solid var(--green-deep); }
+  .stat .n{ font-size:22px; font-weight:700; }
+  .stat .l{ font-size:11.5px; color: var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; margin-top:2px;}
+  .stat.total .n{ color: var(--green-deep); }
+  .stat.goed .n{ color: var(--goed); }
+  .stat.matig .n{ color: var(--matig); }
+  .stat.slecht .n{ color: var(--slecht); }
+  .stat.zeerslecht .n{ color: var(--zeerslecht); }
+  .stat.deplorabel .n{ color: var(--deplorabel); }
+  .stat.priority{ background: var(--deplorabel-bg); border-color: var(--deplorabel); }
+  .stat.priority .n{ color: var(--deplorabel); }
+
+  .priority-banner{
+    background: var(--deplorabel-bg); border:1px solid var(--deplorabel);
+    border-radius:10px; padding:14px 16px; margin-bottom:20px;
+    display:flex; align-items:flex-start; gap:12px;
+  }
+  .priority-banner .icon{ font-size:20px; line-height:1; }
+  .priority-banner b{ color: var(--deplorabel); }
+  .priority-banner p{ margin:4px 0 0; font-size:13.5px; color: var(--ink); }
+
+  .controls{
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+    background: var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:14px; margin-bottom:18px;
+  }
+  .controls input[type="text"]{
+    flex: 1 1 220px; padding:9px 12px; border:1px solid var(--line); border-radius:8px;
+    font-size:14px; background:#fff;
+  }
+  .controls select{
+    padding:9px 10px; border:1px solid var(--line); border-radius:8px; font-size:13.5px; background:#fff; color:var(--ink);
+  }
+  .controls .clear{
+    background:none; border:1px solid var(--line); border-radius:8px; padding:9px 12px;
+    font-size:13px; cursor:pointer; color:var(--ink-soft);
+  }
+  .controls .clear:hover{ background:#f1efe6; }
+
+  .count-line{ font-size:13px; color:var(--ink-soft); margin: 0 0 10px 2px; }
+
+  table{ width:100%; border-collapse:collapse; background:var(--panel); border-radius:12px; overflow:hidden; border:1px solid var(--line); }
+  thead th{
+    text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.05em;
+    color:#fff; background: var(--green-deep); padding:11px 12px; cursor:pointer; user-select:none;
+    white-space:nowrap;
+  }
+  thead th .arrow{ opacity:.6; font-size:10px; margin-left:4px; }
+  tbody tr{ border-top:1px solid var(--line); }
+  tbody tr:hover{ background:#fbfaf5; }
+  tbody td{ padding:10px 12px; font-size:13.8px; vertical-align:top; }
+  td.district{ color:var(--ink-soft); font-size:12.8px; white-space:nowrap; }
+  td.kantoor{ font-weight:600; white-space:nowrap; }
+  td.adres{ color:var(--ink); }
+  td.type{ white-space:nowrap; font-size:12.8px; color:var(--ink-soft); }
+
+  .badge{
+    display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700;
+    white-space:nowrap;
+  }
+  .badge.goed{ background:var(--goed-bg); color:var(--goed); }
+  .badge.matig{ background:var(--matig-bg); color:var(--matig); }
+  .badge.slecht{ background:var(--slecht-bg); color:var(--slecht); }
+  .badge.zeerslecht{ background:var(--zeerslecht-bg); color:var(--zeerslecht); }
+  .badge.deplorabel{ background:var(--deplorabel-bg); color:var(--deplorabel); }
+  .badge.onbekend{ background:var(--onbekend-bg); color:var(--onbekend); }
+
+  .huur-flag{
+    display:inline-block; margin-left:6px; font-size:11px; color:var(--ochre); font-weight:700;
+  }
+
+  footer.note{
+    margin-top:22px; font-size:12px; color:var(--ink-soft); border-top:1px solid var(--line); padding-top:14px;
+  }
+  .empty{ padding:30px; text-align:center; color:var(--ink-soft); font-size:14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">SOZAVO — Wijkkantoren infrastructuur</div>
+    <h1>Status &amp; clusteringprioriteit wijkkantoren</h1>
+    <div class="sub">Overzicht van alle wijk-, DA- en DAP-kantoren per district, met pand-status (uit "Overzicht Wijkkantoren/Status") en eigendomssituatie. Panden met een slechte status én huurpand-status zijn de eerste kandidaten voor clustering binnen DC/DA overheidskantoren.</div>
+  </header>
+
+  <div id="statCards" class="stats"></div>
+
+  <div class="priority-banner">
+    <div class="icon">⚠️</div>
+    <div>
+      <b>Clusteringprioriteit</b> — <span id="prioCount">0</span> huurpanden verkeren in staat "Slecht", "Zeer slecht" of "Deplorabele staat". Dit zijn de meest logische kandidaten om als eerste te herhuisvesten in een DC/DA overheidsgebouw: slechte bouwkundige staat gecombineerd met lopende huurlasten.
+      <p>Klik op de kaart <b>"Prioriteit"</b> hierboven om alleen deze kantoren te tonen.</p>
+    </div>
+  </div>
+
+  <div class="controls">
+    <input type="text" id="search" placeholder="Zoek op kantoor, adres of district…">
+    <select id="fDistrict"><option value="">Alle districten</option></select>
+    <select id="fStatus"><option value="">Alle statussen</option></select>
+    <select id="fType"><option value="">Alle eigendomstypen</option></select>
+    <button class="clear" id="clearBtn">Filters wissen</button>
+  </div>
+
+  <div class="count-line"><span id="resultCount">0</span> kantoren getoond</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th data-key="district">District <span class="arrow">↕</span></th>
+        <th data-key="kantoor">Kantoor <span class="arrow">↕</span></th>
+        <th data-key="adres">Adres <span class="arrow">↕</span></th>
+        <th data-key="type">Eigendom <span class="arrow">↕</span></th>
+        <th data-key="statusRank">Status <span class="arrow">↕</span></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div id="emptyMsg" class="empty" style="display:none;">Geen kantoren gevonden voor deze filtercombinatie.</div>
+
+  <footer class="note">
+    Bron: “Overzicht Wijkkantoren / Status” (aangeleverde PDF). Enkele adressen/statussen op de gescande, geroteerde tabel waren moeilijk eenduidig te ontcijferen (met name pagina 2 en 5) — controleer twijfelgevallen tegen het origineel. Kantoren zonder ingevulde status zijn gemarkeerd als "Onbekend".
+  </footer>
+
+</div>
+
+<script>
+const RAW = [
+  // Paramaribo
+  {district:"Paramaribo", kantoor:"DAP 1", adres:"Mgr. Wulfinghstraat", type:"Huurpand", status:"Matig"},
+  {district:"Paramaribo", kantoor:"DAP 2", adres:"(geen adres vermeld)", type:"", status:""},
+  {district:"Paramaribo", kantoor:"Wijk 2", adres:"Mgr. Wulfinghstraat", type:"Huurpand", status:"Matig"},
+  {district:"Paramaribo", kantoor:"Wijk 4", adres:"Mgr. Wulfinghstraat", type:"Huurpand", status:"Matig"},
+  {district:"Paramaribo", kantoor:"Wijk 5", adres:"Mgr. Wulfinghstraat", type:"Huurpand", status:"Matig"},
+  {district:"Paramaribo", kantoor:"Wijk 7", adres:"Mgr. Wulfinghstraat", type:"Huurpand", status:"Matig"},
+  {district:"Paramaribo", kantoor:"Wijk 8", adres:"Mgr. Wulfinghstraat", type:"Huurpand", status:"Matig"},
+  {district:"Paramaribo", kantoor:"Wijk 9 en 16", adres:"Wanakoestraat 10 beneden", type:"Huurpand", status:"Goed"},
+  {district:"Paramaribo", kantoor:"Wijk 10 en 11", adres:"Kastiestraat / Ramgoelamweg", type:"Huurpand", status:"Matig"},
+  {district:"Paramaribo", kantoor:"Wijk 13", adres:"Mgr. Wulfinghstraat", type:"Huurpand", status:"Matig"},
+  {district:"Paramaribo", kantoor:"Wijk 15", adres:"Ratan Oemrawsingh straat / Zijstraat Amiestraat", type:"Huurpand", status:"Goed"},
+
+  // Wanica
+  {district:"Wanica", kantoor:"DA Wanica 1", adres:"Centraal kantoor Lelydorp", type:"Overheid", status:"Slecht"},
+  {district:"Wanica", kantoor:"Wijk 1", adres:"Centraal kantoor Lelydorp", type:"Overheid", status:"Slecht"},
+  {district:"Wanica", kantoor:"Wijk 9", adres:"Centraal kantoor Lelydorp", type:"Overheid", status:"Slecht"},
+  {district:"Wanica", kantoor:"Wijk 3", adres:"Klaaskreek", type:"Geen werkgebied", status:""},
+  {district:"Wanica", kantoor:"Wijk 2", adres:"Bronsweg", type:"Overheid", status:"Goed"},
+  {district:"Wanica", kantoor:"Wijk 2 en 14", adres:"Welgedacht A weg no. 65", type:"Huurpand", status:"Goed"},
+  {district:"Wanica", kantoor:"Wijk 3 (DA Wanica 2)", adres:"Indira Gandhi weg no. 490", type:"Huurpand", status:"Goed"},
+  {district:"Wanica", kantoor:"Wijk 7 en 12", adres:"Cassialaan no. 60 beneden", type:"Huurpand", status:"Zeer slecht"},
+  {district:"Wanica", kantoor:"Wijk 10 en 11", adres:"Sumatraweg no. 167", type:"Huurpand", status:"Matig"},
+  {district:"Wanica", kantoor:"DA Wanica centraal", adres:"Industrieweg no. 93 beneden", type:"Huurpand", status:"Slecht"},
+  {district:"Wanica", kantoor:"Wijk 4 en 13", adres:"Bomaweg beneden no. 275", type:"Huurpand", status:"Matig"},
+  {district:"Wanica", kantoor:"Wijk 5 en 6", adres:"Commissaris Wethingweg", type:"Huurpand", status:"Matig"},
+  {district:"Wanica", kantoor:"Wijk 8 en 11", adres:"Sir Winston Churchillweg", type:"Huurpand", status:"Zeer slecht"},
+  {district:"Wanica", kantoor:"Wijk 15", adres:"Welgedacht A weg no. 325", type:"Huurpand", status:"Matig"},
+
+  // Brokopondo
+  {district:"Brokopondo", kantoor:"Wijk 1", adres:"Manadam weg no. 50 / Afobakka", type:"Overheid", status:"Slecht"},
+  {district:"Brokopondo", kantoor:"DA Brokopondo", adres:"Manadam weg no. 50 / Afobakka", type:"Overheid", status:"Slecht"},
+  {district:"Brokopondo", kantoor:"Wijk 12", adres:"Houttuin Rammaranstraat no. 1", type:"Overheid", status:"Matig"},
+  {district:"Brokopondo", kantoor:"Wijk 6", adres:"Jagernath Lachmonstraat / Achter SLM", type:"Overheid", status:"Zeer slecht"},
+  {district:"Brokopondo", kantoor:"Wijk 1 (bijkantoor)", adres:"Mgr. Wulfinghstraat", type:"Huurpand", status:"Matig"},
+  {district:"Brokopondo", kantoor:"Wijk 14", adres:"Gemenelandsweg A.O.V. complex", type:"Overheid", status:"Slecht"},
+
+  // Commewijne
+  {district:"Commewijne", kantoor:"DA Commewijne", adres:"Oost-Westverbinding no. 36", type:"Huurpand", status:"Goed"},
+  {district:"Commewijne", kantoor:"Wijk 1", adres:"Pitjelstraat / Ellen", type:"Huurpand", status:"Goed"},
+  {district:"Commewijne", kantoor:"Wijk 2", adres:"Tamanredjo", type:"Overheid", status:"Deplorabele staat"},
+
+  // Marowijne
+  {district:"Marowijne", kantoor:"Wijk 5", adres:"Welbedacht km. 331", type:"Huurpand", status:"Goed"},
+  {district:"Marowijne", kantoor:"Wijk 4", adres:"Comm. Thurkowweg no. 58", type:"Huurpand", status:"Slecht"},
+  {district:"Marowijne", kantoor:"Wijk 6 (Dependance Technische Dienst)", adres:"Weg naar Peperpot 55, Lust en Rust / Coom. Thurkowweg", type:"Huurpand", status:"Matig"},
+  {district:"Marowijne", kantoor:"Wijk 3", adres:"Roblesweg no. 271 / Voorburg", type:"Huurpand", status:"Deplorabele staat"},
+  {district:"Marowijne", kantoor:"Wijk 2 (Albina)", adres:"Galibi", type:"Overheid", status:"Matig"},
+  {district:"Marowijne", kantoor:"DA Marowijne", adres:"Staatsdorp Moengo / Galibi", type:"Overheid", status:"Deplorabele staat"},
+
+  // Saramacca
+  {district:"Saramacca", kantoor:"Wijk 1", adres:"Twatwastraat no. 2", type:"Overheid", status:"Matig"},
+  {district:"Saramacca", kantoor:"DA Saramacca", adres:"Groningen", type:"Overheid", status:"Matig"},
+  {district:"Saramacca", kantoor:"Wijk 2", adres:"Janikaba, Meester P. Chandishaw no. 67", type:"Overheid R.O. / Volksgezondheid", status:"Matig"},
+  {district:"Saramacca", kantoor:"Wijk 3", adres:"Kampong Baroe", type:"Overheid R.O.", status:"Matig"},
+  {district:"Saramacca", kantoor:"Wijk 4", adres:"Catharina Sophiaweg", type:"Overheid BIZA", status:"Matig"},
+  {district:"Saramacca", kantoor:"Wijk 5", adres:"Calcutta / Catharina Sophiaweg no. 595", type:"Overheid Justitie", status:"Matig"},
+
+  // Para
+  {district:"Para", kantoor:"Wijk 1", adres:"Plantage Osembo", type:"Overheid", status:"Matig"},
+  {district:"Para", kantoor:"DA Para", adres:"Damstraat", type:"Overheid", status:"Deplorabele staat"},
+  {district:"Para", kantoor:"Wijk 6", adres:"15A Rambaranmissierweg", type:"Overheid R.O.", status:"Matig"},
+  {district:"Para", kantoor:"Wijk 5", adres:"Wageningen", type:"Overheid R.O.", status:"Matig"},
+  {district:"Para", kantoor:"Wijk 4", adres:"Groot Henar Polder no. 11", type:"Huurpand", status:"Goed"},
+  {district:"Para", kantoor:"Wijk 3", adres:"15 Rambaranmissierweg", type:"Overheid R.O.", status:"Matig"},
+  {district:"Para", kantoor:"Wijk 2", adres:"Voorland no. 15", type:"Overheid LVV", status:"Matig"},
+  {district:"Para", kantoor:"Wijk 1 (bijkantoor)", adres:"Akadoergajowstraat no. 96", type:"Overheid", status:"Matig"},
+  {district:"Para", kantoor:"Wijk 5 (vervolg)", adres:"Simonspolder no. 53 beneden", type:"Huurpand", status:"Matig"},
+  {district:"Para", kantoor:"Wijk 3 (vervolg)", adres:"La Vigilantia", type:"Overheid R.O.", status:"Goed"},
+  {district:"Para", kantoor:"Wijk 2 en 4 (vervolg)", adres:"Spoorbaan no. 2 / Osembo", type:"Overheid", status:"Deplorabele staat"},
+
+  // Nickerie
+  {district:"Nickerie", kantoor:"DA Nickerie", adres:"(geen adres vermeld)", type:"Overheid", status:""},
+  {district:"Nickerie", kantoor:"Wijk 1", adres:"Totness", type:"Overheid", status:"Deplorabele staat"},
+
+  // Coronie
+  {district:"Coronie", kantoor:"DA Coronie", adres:"(geen adres vermeld)", type:"Overheid", status:"Deplorabele staat"},
+
+  // Sipaliwini
+  {district:"Sipaliwini", kantoor:"Wijk 2", adres:"Mgr. Wulfinghstraat", type:"Huurpand", status:"Matig"},
+  {district:"Sipaliwini", kantoor:"Wijk 1", adres:"Mgr. Wulfinghstraat", type:"Huurpand", status:"Matig"},
+  {district:"Sipaliwini", kantoor:"DA Sipaliwini", adres:"Mgr. Wulfinghstraat", type:"Huurpand", status:"Matig"},
+];
+
+const STATUS_META = {
+  "Goed":            {rank:1, cls:"goed"},
+  "Matig":           {rank:2, cls:"matig"},
+  "Slecht":          {rank:3, cls:"slecht"},
+  "Zeer slecht":     {rank:4, cls:"zeerslecht"},
+  "Deplorabele staat":{rank:5, cls:"deplorabel"},
+  "":                {rank:0, cls:"onbekend"}
+};
+
+const DATA = RAW.map(r => {
+  const statusKey = r.status || "";
+  const meta = STATUS_META[statusKey] !== undefined ? STATUS_META[statusKey] : STATUS_META[""];
+  return {
+    ...r,
+    statusLabel: statusKey || "Onbekend",
+    statusRank: meta.rank,
+    statusCls: meta.cls,
+    isHuur: /huur/i.test(r.type),
+    isPriority: meta.rank >= 3 && /huur/i.test(r.type)
+  };
+});
+
+let state = { search:"", district:"", status:"", type:"", sortKey:"statusRank", sortDir:"desc", onlyPriority:false };
+
+function uniqueSorted(arr){ return [...new Set(arr)].filter(Boolean).sort((a,b)=>a.localeCompare(b,'nl')); }
+
+function populateFilters(){
+  const dSel = document.getElementById('fDistrict');
+  uniqueSorted(DATA.map(d=>d.district)).forEach(d=>{
+    const o=document.createElement('option'); o.value=d; o.textContent=d; dSel.appendChild(o);
+  });
+  const sSel = document.getElementById('fStatus');
+  ["Goed","Matig","Slecht","Zeer slecht","Deplorabele staat","Onbekend"].forEach(s=>{
+    const o=document.createElement('option'); o.value=s; o.textContent=s; sSel.appendChild(o);
+  });
+  const tSel = document.getElementById('fType');
+  uniqueSorted(DATA.map(d=>d.type)).forEach(t=>{
+    const o=document.createElement('option'); o.value=t; o.textContent=t; tSel.appendChild(o);
+  });
+}
+
+function renderStats(){
+  const total = DATA.length;
+  const counts = {};
+  DATA.forEach(d=>{ counts[d.statusLabel] = (counts[d.statusLabel]||0)+1; });
+  const priorityCount = DATA.filter(d=>d.isPriority).length;
+
+  const cards = [
+    {key:"", cls:"total", label:"Totaal kantoren", n: total},
+    {key:"Goed", cls:"goed", label:"Goed", n: counts["Goed"]||0},
+    {key:"Matig", cls:"matig", label:"Matig", n: counts["Matig"]||0},
+    {key:"Slecht", cls:"slecht", label:"Slecht", n: counts["Slecht"]||0},
+    {key:"Zeer slecht", cls:"zeerslecht", label:"Zeer slecht", n: counts["Zeer slecht"]||0},
+    {key:"Deplorabele staat", cls:"deplorabel", label:"Deplorabel", n: counts["Deplorabele staat"]||0},
+    {key:"__priority__", cls:"priority", label:"Prioriteit (huur + slecht)", n: priorityCount},
+  ];
+
+  const el = document.getElementById('statCards');
+  el.innerHTML = cards.map(c=>`
+    <div class="stat ${c.cls}" data-status="${c.key}">
+      <div class="n">${c.n}</div>
+      <div class="l">${c.label}</div>
+    </div>
+  `).join("");
+
+  document.getElementById('prioCount').textContent = priorityCount;
+
+  el.querySelectorAll('.stat').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      const st = card.getAttribute('data-status');
+      if(st === "__priority__"){
+        state.onlyPriority = !state.onlyPriority;
+        state.status = "";
+        document.getElementById('fStatus').value = "";
+      } else {
+        state.onlyPriority = false;
+        if(state.status === st){ state.status = ""; } else { state.status = st; }
+        document.getElementById('fStatus').value = state.status;
+      }
+      render();
+    });
+  });
+}
+
+function applyFilters(){
+  return DATA.filter(d=>{
+    if(state.onlyPriority && !d.isPriority) return false;
+    if(state.district && d.district !== state.district) return false;
+    if(state.status && d.statusLabel !== state.status) return false;
+    if(state.type && d.type !== state.type) return false;
+    if(state.search){
+      const q = state.search.toLowerCase();
+      const hay = `${d.district} ${d.kantoor} ${d.adres} ${d.type} ${d.statusLabel}`.toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function sortRows(rows){
+  const dir = state.sortDir === 'asc' ? 1 : -1;
+  return rows.slice().sort((a,b)=>{
+    let va = a[state.sortKey], vb = b[state.sortKey];
+    if(typeof va === 'string') va = va.toLowerCase();
+    if(typeof vb === 'string') vb = vb.toLowerCase();
+    if(va < vb) return -1*dir;
+    if(va > vb) return 1*dir;
+    // secondary sort by district then kantoor for stability
+    if(a.district !== b.district) return a.district.localeCompare(b.district,'nl');
+    return a.kantoor.localeCompare(b.kantoor,'nl');
+  });
+}
+
+function render(){
+  const rows = sortRows(applyFilters());
+  const tbody = document.getElementById('tbody');
+  const emptyMsg = document.getElementById('emptyMsg');
+
+  document.getElementById('resultCount').textContent = rows.length;
+
+  if(rows.length === 0){
+    tbody.innerHTML = "";
+    emptyMsg.style.display = "block";
+  } else {
+    emptyMsg.style.display = "none";
+    tbody.innerHTML = rows.map(d=>`
+      <tr>
+        <td class="district">${d.district}</td>
+        <td class="kantoor">${d.kantoor}</td>
+        <td class="adres">${d.adres}</td>
+        <td class="type">${d.type || "—"}${d.isHuur ? '<span class="huur-flag">HUUR</span>' : ''}</td>
+        <td><span class="badge ${d.statusCls}">${d.statusLabel}</span></td>
+      </tr>
+    `).join("");
+  }
+
+  document.querySelectorAll('.stat').forEach(c=>{
+    const st = c.getAttribute('data-status');
+    if(st === "__priority__"){ c.classList.toggle('active', state.onlyPriority); }
+    else { c.classList.toggle('active', st === state.status && state.status !== "" && !state.onlyPriority); }
+  });
+
+  renderStats();
+  // re-highlight active card after re-render (renderStats rebuilds DOM)
+  document.querySelectorAll('.stat').forEach(c=>{
+    const st = c.getAttribute('data-status');
+    if(st === "__priority__"){ c.classList.toggle('active', state.onlyPriority); }
+    else { c.classList.toggle('active', st === state.status && state.status !== "" && !state.onlyPriority); }
+  });
+}
+
+document.getElementById('search').addEventListener('input', e=>{ state.search = e.target.value; render(); });
+document.getElementById('fDistrict').addEventListener('change', e=>{ state.district = e.target.value; render(); });
+document.getElementById('fStatus').addEventListener('change', e=>{ state.status = e.target.value; render(); });
+document.getElementById('fType').addEventListener('change', e=>{ state.type = e.target.value; render(); });
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  state = { ...state, search:"", district:"", status:"", type:"", onlyPriority:false };
+  document.getElementById('search').value = "";
+  document.getElementById('fDistrict').value = "";
+  document.getElementById('fStatus').value = "";
+  document.getElementById('fType').value = "";
+  render();
+});
+
+document.querySelectorAll('thead th').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.getAttribute('data-key');
+    if(state.sortKey === key){ state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc'; }
+    else { state.sortKey = key; state.sortDir = 'asc'; }
+    render();
+  });
+});
+
+populateFilters();
+render();
+</script>
+</body>
+</html>
